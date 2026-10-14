@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{margin:0}</style>
+<title>Discrete Probability Distributions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one 960px column. Sticky-free header with nav; each module is a vertical stack: inputs, statistic cards, PMF and CDF calculators side by side, then graphs. */
+:root{
+  --bg:#F3F6F7; --surface:#FFFFFF; --ink:#13222B; --muted:#586873; --line:#D5DEE3; --soft:#E9EFF2;
+  --accent:#0E6B78; --accent-strong:#084A54;
+  --bar:#2A8794; --bar-hi:#0B5560; --mean:#C4501B; --err:#B42318;
+  --s1:#2B6CB0; --s2:#C26A00; --s3:#7B3FA0;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E171C; --surface:#152229; --ink:#E5EEF2; --muted:#93A6B1; --line:#27373F; --soft:#1C2C34;
+    --accent:#5CBFCC; --accent-strong:#8FDAE4;
+    --bar:#4AA9B6; --bar-hi:#A5E3EB; --mean:#F2A072; --err:#FF8A80;
+    --s1:#6CA8E8; --s2:#F0A04B; --s3:#B58AE0;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E171C; --surface:#152229; --ink:#E5EEF2; --muted:#93A6B1; --line:#27373F; --soft:#1C2C34;
+  --accent:#5CBFCC; --accent-strong:#8FDAE4;
+  --bar:#4AA9B6; --bar-hi:#A5E3EB; --mean:#F2A072; --err:#FF8A80;
+  --s1:#6CA8E8; --s2:#F0A04B; --s3:#B58AE0;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5}
+.wrap{max-width:960px;margin-inline:auto;padding-inline:16px}
+@media (min-width:640px){.wrap{padding-inline:24px}}
+
+/* header */
+.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding-block:12px}
+.brand{display:flex;flex-direction:column;text-decoration:none;color:var(--ink);min-width:0}
+.eyebrow{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.brand-name{font-weight:600;font-size:16px}
+nav{display:flex;flex-wrap:wrap;gap:4px}
+nav a{padding:6px 12px;border-radius:4px;color:var(--muted);text-decoration:none;font-weight:500;font-size:14.5px}
+nav a:hover{color:var(--ink);background:var(--soft)}
+nav a[aria-current="page"]{color:var(--accent-strong);background:var(--soft)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* page */
+main.wrap{padding-block:28px 56px}
+.stack{display:flex;flex-direction:column;gap:16px}
+.head{display:flex;flex-direction:column;gap:6px}
+h1{font-size:28px;line-height:1.2;margin:0;font-weight:600;text-wrap:balance}
+h2{font-size:17px;margin:0 0 12px;font-weight:600}
+.lede{margin:0;color:var(--muted);max-width:65ch}
+
+/* home list */
+.rows{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:hidden}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;padding:14px 18px;text-decoration:none;color:inherit;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row:hover{background:var(--soft)}
+.row b{font-size:16px;font-weight:600}
+.row .d{color:var(--muted);grid-column:1}
+.status{grid-row:1 / 3;grid-column:2;align-self:center;font-size:12.5px;font-weight:500;padding:2px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.status.ready{color:var(--accent-strong);border-color:var(--accent)}
+
+/* panels and fields */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:16px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+label{font-weight:500;font-size:14px}
+.v{font-family:var(--mono);font-style:italic}
+input[type=number]{width:100%;height:42px;padding:0 12px;font-family:var(--mono);font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px}
+input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input[aria-invalid="true"]{border-color:var(--err)}
+.hint{margin:0;font-size:12.5px;color:var(--muted)}
+.err{margin:0;font-size:13px;color:var(--err);font-weight:500}
+.selected{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.dist{font-family:var(--mono);font-size:18px;font-weight:500;overflow-wrap:anywhere}
+.sel-note{color:var(--muted);font-size:13.5px}
+
+/* statistic cards */
+.cards{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.cards>:last-child:nth-child(odd){grid-column:1 / -1}
+@media (min-width:760px){
+  .cards.c5{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cards>:last-child:nth-child(odd){grid-column:auto}
+}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.stat .l{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.stat .n{font-family:var(--mono);font-size:24px;font-weight:500;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stat .f{font-family:var(--mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+
+/* calculators */
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
+.expr{font-family:var(--mono);font-size:13.5px;background:var(--soft);padding:10px 12px;border-radius:4px;margin:0;overflow-x:auto;white-space:nowrap}
+.expr+.expr{margin-top:6px}
+sup{font-size:.75em;line-height:0}
+.out{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.res{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin:0;font-family:var(--mono)}
+.res .k{color:var(--muted);font-size:14px}
+.res .r{font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.meaning{margin:0;max-width:60ch}
+
+/* charts */
+.chart{position:relative;min-height:300px}
+.chart svg{display:block;width:100%;touch-action:pan-y}
+.grid{stroke:var(--line);stroke-width:1}
+.axis{stroke:var(--muted);stroke-width:1}
+.tick{fill:var(--muted);font-family:var(--mono);font-size:11.5px}
+.axt{fill:var(--ink);font-size:12.5px;font-weight:500;font-family:var(--font)}
+.bar{fill:var(--bar)}
+.bar.hl{fill:var(--bar-hi)}
+.meanline{stroke:var(--mean);stroke-width:1.75;stroke-dasharray:6 4}
+.meanlab{fill:var(--mean);font-family:var(--mono);font-size:12px;font-weight:500}
+.guide{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.ln{fill:none;stroke-width:2;stroke-linejoin:round}
+.ln1{stroke:var(--s1)}.ln2{stroke:var(--s2)}.ln3{stroke:var(--s3)}
+.mk{stroke:var(--surface);stroke-width:1}
+.mk1{fill:var(--s1)}.mk2{fill:var(--s2)}.mk3{fill:var(--s3)}
+.tip{position:absolute;left:0;top:0;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 10px;border-radius:4px;font-family:var(--mono);font-size:12.5px;line-height:1.55;white-space:nowrap;z-index:2}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 8px;padding:0;list-style:none;font-size:13px;color:var(--muted)}
+.legend li{display:flex;align-items:center;gap:6px}
+.sw-bar{width:12px;height:12px;background:var(--bar);border-radius:2px}
+.sw-mean{width:22px;border-top:2px dashed var(--mean)}
+.caption{margin:8px 0 0;font-size:13px;color:var(--muted)}
+.exercise h2{margin-bottom:10px}
+.exercise p{margin:0 0 8px;max-width:65ch}
+.exercise ul,.exercise ol{margin:0 0 8px;padding-left:22px;max-width:65ch}
+.exercise li{margin-bottom:4px}
+.soon{color:var(--muted);margin:0}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#home"><span class="eyebrow">AIML Laboratory</span><span class="brand-name">Discrete Probability Distributions</span></a>
+    <nav aria-label="Modules">
+      <a href="#home">Home</a>
+      <a href="#binomial">Binomial</a>
+      <a href="#poisson">Poisson</a>
+      <a href="#geometric">Geometric</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- HOME -->
+<section class="stack" id="page-home">
+  <div class="head">
+    <h1>Discrete Probability Distributions</h1>
+    <p class="lede">Interactive modules for the undergraduate AIML laboratory. Change the parameters, read the statistics and see how the distribution responds.</p>
+  </div>
+  <div class="rows">
+    <a class="row" href="#binomial"><b>Binomial Distribution</b><span class="d">Number of successes in n independent trials.</span><span class="status ready">Ready</span></a>
+    <a class="row" href="#poisson"><b>Poisson Distribution</b><span class="d">Number of events in a fixed interval at an average rate λ.</span><span class="status ready">Ready</span></a>
+    <a class="row" href="#geometric"><b>Geometric Distribution</b><span class="d">Number of trials until the first success.</span><span class="status">Coming soon</span></a>
+  </div>
+</section>
+
+<!-- BINOMIAL -->
+<section class="stack" id="page-binomial" hidden>
+  <div class="head">
+    <h1>Binomial Distribution</h1>
+    <p class="lede">The number of successes X in n independent trials, where every trial succeeds with the same probability p.</p>
+  </div>
+
+  <section class="panel exercise">
+    <h2>Exercise 1 – Interactive Binomial Distribution UI</h2>
+    <p>Use the Binomial Distribution module developed in the lab application.</p>
+    <p>Configure the application with:</p>
+    <ul>
+      <li>Number of trials: <span class="v">n</span> = 15</li>
+      <li>Probability of success: <span class="v">p</span> = 0.6</li>
+    </ul>
+    <p>Using the UI, determine:</p>
+    <ol>
+      <li>Mean and variance of the distribution.</li>
+      <li>P(X=9) — probability of exactly 9 successes.</li>
+      <li>P(X ≤ 10) — probability of at most 10 successes.</li>
+      <li>Observe the PMF graph and identify the region where the probability is highest.</li>
+      <li>Write a brief inference from the visualization.</li>
+    </ol>
+  </section>
+
+  <div class="panel">
+    <h2>Inputs</h2>
+    <div class="fields">
+      <div class="field">
+        <label for="b-n">Number of trials <span class="v">n</span></label>
+        <input id="b-n" type="number" inputmode="numeric" min="1" max="1000" step="1" value="20" aria-describedby="b-n-hint b-n-err">
+        <p class="hint" id="b-n-hint">Positive whole number, up to 1000.</p>
+        <p class="err" id="b-n-err" role="alert" hidden></p>
+      </div>
+      <div class="field">
+        <label for="b-p">Probability of success <span class="v">p</span></label>
+        <input id="b-p" type="number" inputmode="decimal" min="0" max="1" step="0.01" value="0.35" aria-describedby="b-p-hint b-p-err">
+        <p class="hint" id="b-p-hint">Between 0 and 1.</p>
+        <p class="err" id="b-p-err" role="alert" hidden></p>
+      </div>
+    </div>
+    <div class="selected" id="b-selected" aria-live="polite"></div>
+  </div>
+
+  <div class="stack" id="b-results">
+    <div class="cards c5" id="b-cards"></div>
+
+    <div class="calc">
+      <section class="panel">
+        <h2>Probability mass function</h2>
+        <div class="field">
+          <label for="b-k1">Number of successes <span class="v">k</span></label>
+          <input id="b-k1" type="number" inputmode="numeric" min="0" step="1" value="7" aria-describedby="b-k1-err">
+          <p class="err" id="b-k1-err" role="alert" hidden></p>
+        </div>
+        <div class="out" id="b-pmf-out">
+          <div>
+            <p class="expr">P(X=k) = C(n,k) p<sup>k</sup> (1−p)<sup>n−k</sup></p>
+            <p class="expr" id="b-pmf-sub"></p>
+          </div>
+          <p class="res" id="b-pmf-res"></p>
+          <p class="meaning" id="b-pmf-meaning"></p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Cumulative distribution function</h2>
+        <div class="field">
+          <label for="b-k2">Number of successes <span class="v">k</span></label>
+          <input id="b-k2" type="number" inputmode="numeric" min="0" step="1" value="7" aria-describedby="b-k2-err">
+          <p class="err" id="b-k2-err" role="alert" hidden></p>
+        </div>
+        <div class="out" id="b-cdf-out">
+          <p class="res" id="b-cdf-res"></p>
+          <p class="res" id="b-cdf-tail"></p>
+          <p class="meaning">P(X ≤ k) means the probability of getting k or fewer successes.</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>PMF graph</h2>
+      <ul class="legend">
+        <li><span class="sw-bar"></span>P(X = x)</li>
+        <li><span class="sw-mean"></span>Mean</li>
+      </ul>
+      <div class="chart" id="b-chart"></div>
+    </section>
+  </div>
+</section>
+
+<!-- POISSON -->
+<section class="stack" id="page-poisson" hidden>
+  <div class="head">
+    <h1>Poisson Distribution</h1>
+    <p class="lede">The number of events X in a fixed interval when events occur independently at an average rate λ.</p>
+  </div>
+
+  <section class="panel exercise">
+    <h2>Exercise 2 – Interactive Poisson Distribution UI</h2>
+    <p>Use the Poisson Distribution module developed in the lab application.</p>
+    <p>Consider an AI-based monitoring system where the average number of events is <span class="v">λ</span> = 6.</p>
+    <p>Using the UI, determine:</p>
+    <ol>
+      <li>Mean and variance of the distribution.</li>
+      <li>P(X=8) — probability of exactly 8 events.</li>
+      <li>P(X ≤ 5) — probability of at most 5 events.</li>
+      <li>Compare the Poisson PMF graphs for λ = 2, 6 and 10 using the application.</li>
+      <li>Observe how increasing λ changes the distribution and write a brief inference from the graph.</li>
+    </ol>
+  </section>
+
+  <div class="panel">
+    <h2>Inputs</h2>
+    <div class="fields">
+      <div class="field">
+        <label for="p-l">Average number of events <span class="v">λ</span></label>
+        <input id="p-l" type="number" inputmode="decimal" min="0" max="100" step="0.5" value="6" aria-describedby="p-l-hint p-l-err">
+        <p class="hint" id="p-l-hint">Positive number, up to 100.</p>
+        <p class="err" id="p-l-err" role="alert" hidden></p>
+      </div>
+    </div>
+    <div class="selected" id="p-selected" aria-live="polite"></div>
+  </div>
+
+  <div class="stack" id="p-results">
+    <div class="cards c3" id="p-cards"></div>
+
+    <div class="calc">
+      <section class="panel">
+        <h2>Probability mass function</h2>
+        <div class="field">
+          <label for="p-k1">Number of events <span class="v">k</span></label>
+          <input id="p-k1" type="number" inputmode="numeric" min="0" step="1" value="6" aria-describedby="p-k1-err">
+          <p class="err" id="p-k1-err" role="alert" hidden></p>
+        </div>
+        <div class="out" id="p-pmf-out">
+          <div>
+            <p class="expr">P(X=k) = e<sup>−λ</sup> λ<sup>k</sup> / k!</p>
+            <p class="expr" id="p-pmf-sub"></p>
+          </div>
+          <p class="res" id="p-pmf-res"></p>
+          <p class="meaning" id="p-pmf-meaning"></p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Cumulative distribution function</h2>
+        <div class="field">
+          <label for="p-k2">Number of events <span class="v">k</span></label>
+          <input id="p-k2" type="number" inputmode="numeric" min="0" step="1" value="6" aria-describedby="p-k2-err">
+          <p class="err" id="p-k2-err" role="alert" hidden></p>
+        </div>
+        <div class="out" id="p-cdf-out">
+          <p class="res" id="p-cdf-res"></p>
+          <p class="res" id="p-cdf-tail"></p>
+          <p class="meaning">P(X ≤ k) means the probability of getting k or fewer events.</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>PMF graph</h2>
+      <ul class="legend">
+        <li><span class="sw-bar"></span>P(X = x)</li>
+        <li><span class="sw-mean"></span>Mean</li>
+      </ul>
+      <div class="chart" id="p-chart"></div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Compare PMFs for λ = 2, 6 and 10</h2>
+    <ul class="legend">
+      <li><svg width="26" height="12" aria-hidden="true"><line class="ln ln1" x1="0" x2="26" y1="6" y2="6"/><circle class="mk mk1" cx="13" cy="6" r="3.6"/></svg>λ = 2</li>
+      <li><svg width="26" height="12" aria-hidden="true"><line class="ln ln2" x1="0" x2="26" y1="6" y2="6"/><rect class="mk mk2" x="9.6" y="2.6" width="6.8" height="6.8"/></svg>λ = 6</li>
+      <li><svg width="26" height="12" aria-hidden="true"><line class="ln ln3" x1="0" x2="26" y1="6" y2="6"/><polygon class="mk mk3" points="13,1.6 17,9 9,9"/></svg>λ = 10</li>
+    </ul>
+    <div class="chart" id="c-chart"></div>
+    <p class="caption">Hover or touch the graph to compare the three values at each X.</p>
+  </section>
+</section>
+
+<!-- GEOMETRIC -->
+<section class="stack" id="page-geometric" hidden>
+  <div class="head">
+    <h1>Geometric Distribution</h1>
+    <p class="lede">The number of trials needed to get the first success.</p>
+  </div>
+  <div class="panel"><p class="soon">This module is coming soon.</p></div>
+</section>
+
+</main>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var MAXN=1000, MAXL=100, MAXK=1000;
+
+//#math-start
+var logFact=[0];
+function lf(k){while(logFact.length<=k){logFact.push(logFact[logFact.length-1]+Math.log(logFact.length));}return logFact[k];}
+function binomPmf(n,p,k){
+  if(p===0)return k===0?1:0;
+  if(p===1)return k===n?1:0;
+  return Math.exp(lf(n)-lf(k)-lf(n-k)+k*Math.log(p)+(n-k)*Math.log1p(-p));
+}
+function poisPmf(l,k){return Math.exp(-l+k*Math.log(l)-lf(k));}
+function pmfArray(f,len){var a=new Array(len);for(var i=0;i<len;i++)a[i]=f(i);return a;}
+function cdfOf(f,k){var s=0;for(var i=0;i<=k;i++)s+=f(i);return Math.min(1,s);}
+function tailOf(cdf){var t=1-cdf;return t<1e-12?0:t;}
+function binomStats(n,p){
+  var mean=n*p,variance=n*p*(1-p),sd=Math.sqrt(variance);
+  return {mean:mean,variance:variance,sd:sd,second:variance+mean*mean,skew:variance>0?(1-2*p)/sd:null};
+}
+function fmt(x,d){
+  if(d===undefined)d=4;
+  var s=x.toFixed(d);
+  if(s.indexOf('.')>=0)s=s.replace(/0+$/,'').replace(/\.$/,'');
+  return s==='-0'?'0':s;
+}
+function fmtP(x){
+  if(x===0)return '0.000000';
+  if(x<1e-6)return x.toExponential(2);
+  return x.toFixed(6);
+}
+//#math-end
+
+/* ---------- shared helpers ---------- */
+function readNum(el){var s=el.value.trim();return s===''?NaN:Number(s);}
+function setErr(id,msg){
+  var e=$(id+'-err'),inp=$(id);
+  e.textContent=msg;e.hidden=!msg;
+  if(msg)inp.setAttribute('aria-invalid','true');else inp.removeAttribute('aria-invalid');
+}
+function kCheck(id,max){
+  var k=readNum($(id)),err='';
+  if(!isFinite(k))err='Enter a value for k.';
+  else if(k!==Math.floor(k)||k<0||k>max)err='k must be a whole number with 0 ≤ k ≤ '+max+'.';
+  setErr(id,err);
+  return err?null:k;
+}
+function card(l,v,f){return '<div class="stat"><span class="l">'+l+'</span><span class="n">'+v+'</span><span class="f">'+f+'</span></div>';}
+function plural(k,one,many){return k===1?one:many;}
+
+/* ---------- chart drawing (SVG) ---------- */
+function yScale(max){
+  var raw=max/6,e=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/e;
+  var nf=f<=1?1:f<=2?2:f<=5?5:10,step=nf*e;
+  var cnt=Math.ceil(max/step-1e-9),ticks=[];
+  for(var i=0;i<=cnt;i++)ticks.push(+(i*step).toFixed(10));
+  return {top:cnt*step,ticks:ticks};
+}
+function tickLabel(t){return String(+t.toFixed(6));}
+function xStep(N,pw){
+  var chars=String(N-1).length,maxLabels=Math.max(2,Math.floor(pw/(chars*7+14)));
+  var steps=[1,2,5,10,20,25,50,100,200,250,500,1000];
+  for(var i=0;i<steps.length;i++){if(Math.ceil(N/steps[i])<=maxLabels)return steps[i];}
+  return 1000;
+}
+function geom(host,N,maxV){
+  var W=host.clientWidth;if(W<60)return null;
+  var H=W<480?300:340,yt=yScale(maxV);
+  var labW=Math.max.apply(null,yt.ticks.map(function(t){return tickLabel(t).length;}))*7;
+  var L=Math.round(38+labW),R=14,T=30,B=50,pw=W-L-R,ph=H-T-B;
+  return {W:W,H:H,yt:yt,L:L,R:R,T:T,B:B,pw:pw,ph:ph,N:N,slot:pw/N};
+}
+function baseSvg(g,o){
+  var s='<svg width="'+g.W+'" height="'+g.H+'" viewBox="0 0 '+g.W+' '+g.H+'" role="img" aria-label="'+o.aria+'">';
+  g.yt.ticks.forEach(function(t){
+    var y=(g.T+g.ph-t/g.yt.top*g.ph).toFixed(1);
+    s+='<line class="grid" x1="'+g.L+'" x2="'+(g.L+g.pw)+'" y1="'+y+'" y2="'+y+'"/>';
+    s+='<text class="tick" x="'+(g.L-8)+'" y="'+(+y+4).toFixed(1)+'" text-anchor="end">'+tickLabel(t)+'</text>';
+  });
+  var step=xStep(g.N,g.pw);
+  for(var i=0;i<g.N;i+=step){
+    var x=(g.L+(i+0.5)*g.slot).toFixed(1);
+    s+='<line class="axis" x1="'+x+'" x2="'+x+'" y1="'+(g.T+g.ph)+'" y2="'+(g.T+g.ph+4)+'"/>';
+    s+='<text class="tick" x="'+x+'" y="'+(g.T+g.ph+17)+'" text-anchor="middle">'+i+'</text>';
+  }
+  s+='<line class="axis" x1="'+g.L+'" x2="'+(g.L+g.pw)+'" y1="'+(g.T+g.ph)+'" y2="'+(g.T+g.ph)+'"/>';
+  s+='<text class="axt" x="'+(g.L+g.pw/2)+'" y="'+(g.H-8)+'" text-anchor="middle">'+o.xTitle+'</text>';
+  s+='<text class="axt" transform="translate(14 '+(g.T+g.ph/2)+') rotate(-90)" text-anchor="middle">'+o.yTitle+'</text>';
+  return s;
+}
+function attachHover(host,g,onMove,onLeave,tipFn){
+  var svg=host.querySelector('svg'),tip=host.querySelector('.tip');
+  function leave(){tip.hidden=true;onLeave();}
+  function move(e){
+    var r=svg.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+    var i=Math.floor((x-g.L)/g.slot);
+    if(i<0||i>=g.N||y<g.T||y>g.T+g.ph){leave();return;}
+    onMove(i);
+    tip.innerHTML=tipFn(i);tip.hidden=false;
+    var tw=tip.offsetWidth,th=tip.offsetHeight,left=x+14,top=y-th-12;
+    if(left+tw>g.W)left=x-tw-14;
+    if(left<0)left=0;
+    if(top<0)top=y+16;
+    tip.style.transform='translate('+left+'px,'+top+'px)';
+  }
+  svg.addEventListener('pointermove',move);
+  svg.addEventListener('pointerdown',move);
+  svg.addEventListener('pointerleave',leave);
+}
+function barChart(host,o){
+  var N=o.values.length,maxV=Math.max.apply(null,o.values);
+  var g=geom(host,N,maxV);if(!g)return;
+  var s=baseSvg(g,o),bw=Math.max(1,g.slot*0.78);
+  for(var i=0;i<N;i++){
+    var h=o.values[i]/g.yt.top*g.ph,x=g.L+i*g.slot+(g.slot-bw)/2;
+    s+='<rect class="bar" x="'+x.toFixed(2)+'" y="'+(g.T+g.ph-h).toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+h.toFixed(2)+'"/>';
+  }
+  var mx=g.L+(o.mean+0.5)*g.slot,flip=mx>g.W-96;
+  s+='<line class="meanline" x1="'+mx.toFixed(2)+'" x2="'+mx.toFixed(2)+'" y1="'+(g.T-4)+'" y2="'+(g.T+g.ph)+'"/>';
+  s+='<text class="meanlab" x="'+(flip?mx-6:mx+6).toFixed(2)+'" y="'+(g.T-10)+'" text-anchor="'+(flip?'end':'start')+'">mean = '+fmt(o.mean)+'</text>';
+  s+='</svg><div class="tip" hidden></div>';
+  host.innerHTML=s;
+  var rects=host.querySelectorAll('.bar'),cur=-1;
+  function clear(){if(cur>=0)rects[cur].classList.remove('hl');cur=-1;}
+  attachHover(host,g,function(i){clear();cur=i;rects[i].classList.add('hl');},clear,o.tip);
+}
+function lineChart(host,o){
+  var N=o.series[0].vals.length,maxV=0;
+  o.series.forEach(function(sr){sr.vals.forEach(function(v){if(v>maxV)maxV=v;});});
+  var g=geom(host,N,maxV);if(!g)return;
+  var s=baseSvg(g,o);
+  s+='<line class="guide" id="c-guide" x1="0" x2="0" y1="'+g.T+'" y2="'+(g.T+g.ph)+'" visibility="hidden"/>';
+  o.series.forEach(function(sr,si){
+    var pts=sr.vals.map(function(v,i){
+      return (g.L+(i+0.5)*g.slot).toFixed(2)+','+(g.T+g.ph-v/g.yt.top*g.ph).toFixed(2);
+    });
+    s+='<polyline class="ln ln'+(si+1)+'" points="'+pts.join(' ')+'"/>';
+    sr.vals.forEach(function(v,i){
+      var cx=g.L+(i+0.5)*g.slot,cy=g.T+g.ph-v/g.yt.top*g.ph,c='mk mk'+(si+1);
+      if(sr.shape==='circle')s+='<circle class="'+c+'" cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="3.6"/>';
+      else if(sr.shape==='square')s+='<rect class="'+c+'" x="'+(cx-3.4).toFixed(2)+'" y="'+(cy-3.4).toFixed(2)+'" width="6.8" height="6.8"/>';
+      else s+='<polygon class="'+c+'" points="'+cx.toFixed(2)+','+(cy-4.4).toFixed(2)+' '+(cx+4).toFixed(2)+','+(cy+3).toFixed(2)+' '+(cx-4).toFixed(2)+','+(cy+3).toFixed(2)+'"/>';
+    });
+  });
+  s+='</svg><div class="tip" hidden></div>';
+  host.innerHTML=s;
+  var guide=host.querySelector('.guide');
+  attachHover(host,g,function(i){
+    var x=(g.L+(i+0.5)*g.slot).toFixed(2);
+    guide.setAttribute('x1',x);guide.setAttribute('x2',x);guide.setAttribute('visibility','visible');
+  },function(){guide.setAttribute('visibility','hidden');},o.tip);
+}
+
+var redraw={};
+function watch(id,fn){
+  redraw[id]=fn;
+  if(window.ResizeObserver)new ResizeObserver(function(){fn();}).observe($(id));
+  else window.addEventListener('resize',fn);
+}
+
+/* ---------- Binomial ---------- */
+var B=null;
+function drawB(){
+  if(!B)return;
+  barChart($('b-chart'),{
+    values:B.vals,mean:B.mean,xTitle:'Number of successes X',yTitle:'Probability P(X)',
+    aria:'Bar chart of the binomial PMF for n = '+B.n+' and p = '+fmt(B.p,6)+'. The mean is '+fmt(B.mean)+'.',
+    tip:function(i){return '<div>X = '+i+'</div><div>P(X='+i+') = '+fmtP(B.vals[i])+'</div>';}
+  });
+}
+function renderBinomial(){
+  var n=readNum($('b-n')),p=readNum($('b-p')),ne='',pe='';
+  if(!isFinite(n))ne='Enter the number of trials.';
+  else if(n!==Math.floor(n)||n<1)ne='n must be a positive integer.';
+  else if(n>MAXN)ne='n can be at most '+MAXN+'.';
+  if(!isFinite(p))pe='Enter a probability.';
+  else if(p<0||p>1)pe='p must be between 0 and 1.';
+  setErr('b-n',ne);setErr('b-p',pe);
+  var ok=!ne&&!pe;
+  $('b-results').hidden=!ok;
+  if(!ok){B=null;$('b-selected').innerHTML='<span class="sel-note">Correct the highlighted field to see the results.</span>';return;}
+
+  var st=binomStats(n,p),f=function(k){return binomPmf(n,p,k);};
+  $('b-selected').innerHTML='<span class="dist">X ~ Binomial(n = '+n+', p = '+fmt(p,6)+')</span><span class="sel-note">'+n+' '+plural(n,'trial','trials')+', each with success probability '+fmt(p,6)+'</span>';
+  $('b-cards').innerHTML=
+    card('Mean',fmt(st.mean),'np')+
+    card('Variance',fmt(st.variance),'np(1 − p)')+
+    card('Standard deviation',fmt(st.sd),'√variance')+
+    card('Second moment E[X²]',fmt(st.second),'variance + mean²')+
+    card('Skewness',st.skew===null?'undefined':fmt(st.skew),'(1 − 2p) / √(np(1 − p))');
+
+  var k1=kCheck('b-k1',n);
+  $('b-pmf-out').hidden=(k1===null);
+  if(k1!==null){
+    var q=1-p;
+    $('b-pmf-sub').innerHTML='= C('+n+','+k1+') × '+fmt(p,6)+'<sup>'+k1+'</sup> × '+fmt(q,6)+'<sup>'+(n-k1)+'</sup>';
+    $('b-pmf-res').innerHTML='<span class="k">P(X = '+k1+') =</span><span class="r">'+fmtP(f(k1))+'</span>';
+    $('b-pmf-meaning').textContent='This is the probability of getting exactly '+k1+' '+plural(k1,'success','successes')+' in '+n+' '+plural(n,'trial','trials')+'.';
+  }
+
+  var k2=kCheck('b-k2',n);
+  $('b-cdf-out').hidden=(k2===null);
+  if(k2!==null){
+    var c=cdfOf(f,k2);
+    $('b-cdf-res').innerHTML='<span class="k">P(X ≤ '+k2+') =</span><span class="r">'+fmtP(c)+'</span>';
+    $('b-cdf-tail').innerHTML='<span class="k">P(X &gt; '+k2+') = 1 − P(X ≤ '+k2+') =</span><span class="r">'+fmtP(tailOf(c))+'</span>';
+  }
+
+  B={n:n,p:p,mean:st.mean,vals:pmfArray(f,n+1)};
+  drawB();
+}
+
+/* ---------- Poisson ---------- */
+var P=null;
+function drawP(){
+  if(!P)return;
+  barChart($('p-chart'),{
+    values:P.vals,mean:P.l,xTitle:'Number of events X',yTitle:'Probability P(X)',
+    aria:'Bar chart of the Poisson PMF for lambda = '+fmt(P.l,6)+'. The mean is '+fmt(P.l)+'.',
+    tip:function(i){return '<div>X = '+i+'</div><div>P(X='+i+') = '+fmtP(P.vals[i])+'</div>';}
+  });
+}
+function renderPoisson(){
+  var l=readNum($('p-l')),le='';
+  if(!isFinite(l))le='Enter a value for λ.';
+  else if(l<=0)le='λ must be a positive number.';
+  else if(l>MAXL)le='λ can be at most '+MAXL+'.';
+  setErr('p-l',le);
+  $('p-results').hidden=!!le;
+  if(le){P=null;$('p-selected').innerHTML='<span class="sel-note">Correct the highlighted field to see the results.</span>';return;}
+
+  var f=function(k){return poisPmf(l,k);},sd=Math.sqrt(l);
+  $('p-selected').innerHTML='<span class="dist">X ~ Poisson(λ = '+fmt(l,6)+')</span><span class="sel-note">Average of '+fmt(l,6)+' events per interval</span>';
+  $('p-cards').innerHTML=card('Mean',fmt(l),'λ')+card('Variance',fmt(l),'λ')+card('Standard deviation',fmt(sd),'√λ');
+
+  var k1=kCheck('p-k1',MAXK);
+  $('p-pmf-out').hidden=(k1===null);
+  if(k1!==null){
+    $('p-pmf-sub').innerHTML='= e<sup>−'+fmt(l,6)+'</sup> × '+fmt(l,6)+'<sup>'+k1+'</sup> / '+k1+'!';
+    $('p-pmf-res').innerHTML='<span class="k">P(X = '+k1+') =</span><span class="r">'+fmtP(f(k1))+'</span>';
+    $('p-pmf-meaning').textContent='This is the probability of exactly '+k1+' '+plural(k1,'event','events')+' when the average number of events is '+fmt(l,6)+'.';
+  }
+
+  var k2=kCheck('p-k2',MAXK);
+  $('p-cdf-out').hidden=(k2===null);
+  if(k2!==null){
+    var c=cdfOf(f,k2);
+    $('p-cdf-res').innerHTML='<span class="k">P(X ≤ '+k2+') =</span><span class="r">'+fmtP(c)+'</span>';
+    $('p-cdf-tail').innerHTML='<span class="k">P(X &gt; '+k2+') = 1 − P(X ≤ '+k2+') =</span><span class="r">'+fmtP(tailOf(c))+'</span>';
+  }
+
+  var kmax=Math.ceil(l+5*Math.sqrt(l)+5);
+  P={l:l,vals:pmfArray(f,kmax+1)};
+  drawP();
+}
+
+/* Poisson comparison, lambda = 2, 6, 10 */
+var CMP=[{l:2,shape:'circle'},{l:6,shape:'square'},{l:10,shape:'triangle'}].map(function(s){
+  return {l:s.l,shape:s.shape,vals:pmfArray(function(k){return poisPmf(s.l,k);},26)};
+});
+function drawC(){
+  lineChart($('c-chart'),{
+    series:CMP,xTitle:'Number of events X',yTitle:'Probability P(X)',
+    aria:'Line chart comparing the Poisson PMF for lambda = 2, 6 and 10.',
+    tip:function(i){
+      return '<div>X = '+i+'</div>'+CMP.map(function(s){return '<div>λ = '+s.l+(s.l<10?'&nbsp;&nbsp;':'&nbsp;')+'P = '+fmtP(s.vals[i])+'</div>';}).join('');
+    }
+  });
+}
+
+/* ---------- wiring ---------- */
+['b-n','b-p','b-k1','b-k2'].forEach(function(id){$(id).addEventListener('input',renderBinomial);});
+['p-l','p-k1','p-k2'].forEach(function(id){$(id).addEventListener('input',renderPoisson);});
+watch('b-chart',drawB);watch('p-chart',drawP);watch('c-chart',drawC);
+
+/* ---------- navigation ---------- */
+var pages=['home','binomial','poisson','geometric'];
+function show(name){
+  if(pages.indexOf(name)<0)name='home';
+  pages.forEach(function(p){$('page-'+p).hidden=(p!==name);});
+  var links=document.querySelectorAll('nav a');
+  for(var i=0;i<links.length;i++){
+    if(links[i].getAttribute('href')==='#'+name)links[i].setAttribute('aria-current','page');
+    else links[i].removeAttribute('aria-current');
+  }
+  Object.keys(redraw).forEach(function(k){redraw[k]();});
+}
+document.addEventListener('click',function(e){
+  var a=e.target.closest&&e.target.closest('a[href^="#"]');
+  if(!a)return;
+  e.preventDefault();
+  var name=a.getAttribute('href').slice(1);
+  try{location.hash=name;}catch(x){}
+  show(name);
+  try{window.scrollTo(0,0);}catch(x){}
+});
+window.addEventListener('hashchange',function(){show(location.hash.slice(1));});
+
+renderBinomial();
+renderPoisson();
+show(location.hash.slice(1));
+})();
+</script>
+
+</body>
+
+</html>
